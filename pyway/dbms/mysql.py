@@ -1,9 +1,9 @@
 import mysql.connector
+from mysql.connector.abstracts import MySQLConnectionAbstract
 from mysql.connector.connection import MySQLConnection
-from mysql.connector.connection import MySQLConnectionAbstract
 from mysql.connector.connection_cext import CMySQLConnection
 from mysql.connector.pooling import PooledMySQLConnection
-from typing import List, Union
+from typing import Any, List, Tuple, Union, cast
 
 from pyway.migration import Migration
 from pyway.configfile import ConfigFile
@@ -63,7 +63,7 @@ class Mysql():
         cursor = cnx.cursor()
         cursor.execute(f"SELECT {','.join(SELECT_FIELDS)} FROM {self.version_table} ORDER BY {ORDER_BY_FIELD_ASC}")
         migrations = []
-        for row in cursor.fetchall():
+        for row in cast(List[Tuple[Any, ...]], cursor.fetchall()):
             migrations.append(Migration(row[0], row[1], row[2], row[3], row[4]))
         cursor.close()
         cnx.close()
@@ -73,7 +73,7 @@ class Mysql():
         cnx = self.connect()
         cursor = cnx.cursor(buffered=True)
         cursor.execute(f"SELECT {','.join(SELECT_FIELDS)} FROM {self.version_table} WHERE version=%s", [version])
-        row = cursor.fetchone()
+        row = cast(Tuple[Any, ...], cursor.fetchone())
         if row is not None:
             migration = Migration(row[0], row[1], row[2], row[3], row[4])
         cursor.close()

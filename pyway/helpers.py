@@ -1,10 +1,13 @@
 import os
 import re
 import zlib
-from typing import Any, Dict, List, Iterable
+from typing import Any, Dict, List, Iterable, TYPE_CHECKING
 
 from pyway import settings
 from pyway.errors import VALID_NAME_ERROR, DIRECTORY_NOT_FOUND, OUT_OF_DATE_ERROR
+
+if TYPE_CHECKING:
+    from pyway.migration import Migration
 
 
 class bcolors():
@@ -21,7 +24,7 @@ class bcolors():
 class Utils():
 
     @staticmethod
-    def subtract(list_a: List, list_b: List) -> List:
+    def subtract(list_a: List['Migration'], list_b: List['Migration']) -> List['Migration']:
         result = []
         if list_a and list_b:
             # Compare by version, not checksum: two migrations may have identical
@@ -51,7 +54,7 @@ class Utils():
                                                 [x.version, x.name], reverse=False)
 
     @staticmethod
-    def flatten_migrations(migrations: Iterable[Any]) -> List[Dict[Any, Any]]:
+    def flatten_migrations(migrations: Iterable['Migration']) -> List[Dict[str, Any]]:
         migration_list = []
         for migration in migrations:
             migration_list.append({'version': Utils.format_version(migration.version), 'extension': migration.extension,

@@ -1,7 +1,7 @@
 import sys
 
 from pyway.settings import Settings
-from pyway.settings import ConfigFile
+from pyway.configfile import ConfigFile
 from pyway.info import Info
 from pyway.log import logger
 from pyway.migrate import Migrate

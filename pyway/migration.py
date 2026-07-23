@@ -1,15 +1,16 @@
+from datetime import datetime
 from pyway.helpers import Utils
-from typing import List, Any, Optional, Type
+from typing import List, Type, Union
 
 
 class Migration():
-    def __init__(self, version: Any, extension: Any, name: Any,
-                 checksum: Any, apply_timestamp: Optional[Any]) -> None:
+    def __init__(self, version: str, extension: str, name: str,
+                 checksum: str, apply_timestamp: Union[str, datetime, None]) -> None:
         self.version: str = version
         self.extension: str = extension
         self.name: str = name
         self.checksum: str = checksum
-        self.apply_timestamp: Optional[Any] = apply_timestamp
+        self.apply_timestamp: Union[str, datetime, None] = apply_timestamp
 
     @classmethod
     def from_name(cls: Type['Migration'], name: str, path: str, **kwargs: str) -> 'Migration':

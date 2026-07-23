@@ -2,7 +2,7 @@ import os
 import sys
 import argparse
 import yaml
-from typing import Dict, Union
+from typing import Any, Dict, Union
 
 from pyway.configfile import ConfigFile
 from pyway.configfile import MockArgs
@@ -62,7 +62,7 @@ class Settings():
         # See if there is a config file
         if os.path.exists(config_file):
             with open(config_file, "r", encoding='utf-8') as ymlfile:
-                cfg: Dict = yaml.load(ymlfile, Loader=yaml.FullLoader)
+                cfg: Dict[str, Any] = yaml.load(ymlfile, Loader=yaml.FullLoader)
 
             # Expand config
             config = ConfigFile()
