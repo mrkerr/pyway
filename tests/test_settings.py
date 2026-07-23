@@ -1,11 +1,10 @@
+import argparse
 import pytest
 import os
 import sys
 from pyway.configfile import ConfigFile
 from pyway.settings import Settings
 from pyway.settings import ARGS
-from pyway.configfile import MockConfig
-from pyway.configfile import MockArgs
 
 
 # Make sure config options exists and check some defaults
@@ -92,9 +91,8 @@ def test_parse_config_file() -> None:
 @pytest.mark.settings_test
 def test_parse_args() -> None:
 
-    # Setup mock config and args
-    config = MockConfig()
-    args = MockArgs()
+    # Setup mock args
+    args = argparse.Namespace()
 
     # Set attributes on args for testing
     for arg in ARGS:
@@ -110,8 +108,6 @@ def test_parse_args() -> None:
 
 @pytest.mark.settings_test
 def test_parse_arguments() -> None:
-    config = MockConfig()
-
     test_args = [
         'script_name',
         '--database-migration-dir', 'migrations',
@@ -165,6 +161,21 @@ def test_config_file_fills_unset_values() -> None:
 
     assert config.database_username == 'unittest'
     assert config.database_migration_dir == 'schema'
+
+
+@pytest.mark.settings_test
+def test_factory_unknown_database_type() -> None:
+    from pyway.dbms.database import factory
+    with pytest.raises(ValueError) as e:
+        factory('notadatabase')
+    assert "Unsupported database type" in str(e.value)
+
+
+@pytest.mark.settings_test
+def test_factory_no_database_type() -> None:
+    from pyway.dbms.database import factory
+    with pytest.raises(ValueError):
+        factory(None)
 
 
 @pytest.mark.settings_test

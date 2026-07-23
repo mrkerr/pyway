@@ -2,6 +2,7 @@ import os
 from typing import List
 
 from pyway.helpers import Utils
+from pyway.log import logger
 from pyway.migration import Migration
 from pyway.dbms.database import factory
 from pyway.errors import MIGRATIONS_NOT_FOUND
@@ -32,7 +33,10 @@ class Migrate():
                 self._db.upgrade_version(migration)
                 output += Utils.color(f"{migration.name} SUCCESS\n", bcolors.OKBLUE)
             except Exception as error:
-                raise RuntimeError(error)
+                # Report the migrations that already succeeded before failing
+                if output:
+                    logger.info(output)
+                raise RuntimeError(f"{migration.name} FAILED: {error}") from error
         return output
 
     def _get_migration_files_to_be_executed(self) -> List[Migration]:

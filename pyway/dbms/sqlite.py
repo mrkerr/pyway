@@ -3,6 +3,7 @@ from typing import Any, List, Tuple, cast
 
 from pyway.migration import Migration
 from pyway.configfile import ConfigFile
+from pyway.errors import VERSION_NOT_FOUND
 
 
 CREATE_VERSION_MIGRATIONS = "create table if not exists %s ("\
@@ -58,13 +59,13 @@ class Sqlite():
     def get_schema_migration(self, version: str) -> Migration:
         cnx = self.connect()
         cursor = cnx.cursor()
-        cursor.execute(f"SELECT {','.join(SELECT_FIELDS)} FROM {self.version_table} WHERE version='{version}'")
+        cursor.execute(f"SELECT {','.join(SELECT_FIELDS)} FROM {self.version_table} WHERE version=?", [version])
         row = cursor.fetchone()
-        if row is not None:
-            migration = Migration(row[0], row[1], row[2], row[3], row[4])
         cursor.close()
         cnx.close()
-        return migration
+        if row is None:
+            raise ValueError(VERSION_NOT_FOUND % version)
+        return Migration(row[0], row[1], row[2], row[3], row[4])
 
     def upgrade_version(self, migration: Migration) -> None:
         self.execute(INSERT_VERSION_MIGRATE % (self.version_table, migration.version,

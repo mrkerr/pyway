@@ -2,10 +2,9 @@ import os
 import sys
 import argparse
 import yaml
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 from pyway.configfile import ConfigFile
-from pyway.configfile import MockArgs
 
 # Pyway consts
 SQL_MIGRATION_PREFIX = os.environ.get('PYWAY_SQL_MIGRATION_PREFIX', 'V')
@@ -18,7 +17,7 @@ ARGS = ['database_migration_dir', 'database_table', 'database_type', 'database_h
 
 class Settings():
     @staticmethod
-    def parse_args(args: Union[argparse.Namespace, MockArgs]) -> ConfigFile:
+    def parse_args(args: argparse.Namespace) -> ConfigFile:
         config = ConfigFile()
         for arg in ARGS:
             if getattr(args, arg):
@@ -48,7 +47,7 @@ class Settings():
 
         # We already display the version so exit
         if config.version:
-            sys.exit(1)
+            sys.exit(0)
 
         # If no arg is specified, show help
         if not config.cmd:

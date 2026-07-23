@@ -44,6 +44,14 @@ def test_pyway_table_checksum(sqlite_connect) -> None:
 
 @pytest.mark.checksum_test
 @pytest.mark.sqlite_test
+def test_pyway_version_not_found(sqlite_connect) -> None:
+    with pytest.raises(ValueError) as e:
+        sqlite_connect.get_schema_migration('99.99')
+    assert "not found in migration history" in str(e.value)
+
+
+@pytest.mark.checksum_test
+@pytest.mark.sqlite_test
 def test_pyway_table_checksum_fileinvalid(sqlite_connect) -> None:
     config = ConfigFile()
     config.database_type = "sqlite"

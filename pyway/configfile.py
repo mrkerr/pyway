@@ -32,11 +32,3 @@ class ConfigFile():
             value = getattr(other, key)
             if key not in self._explicit and value is not None:
                 self.set_explicit(key, value)
-
-
-class MockConfig():
-    pass
-
-
-class MockArgs():
-    pass

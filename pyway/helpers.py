@@ -89,7 +89,7 @@ class Utils():
                 prev = zlib.crc32(line, prev)
             return "%X" % (prev & 0xFFFFFFFF)
         except FileNotFoundError:
-            raise FileNotFoundError(OUT_OF_DATE_ERROR % fullname.split("/")[-1])
+            raise FileNotFoundError(OUT_OF_DATE_ERROR % os.path.basename(fullname))
 
     @staticmethod
     def basepath(d: str) -> str:
