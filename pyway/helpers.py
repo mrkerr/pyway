@@ -24,8 +24,10 @@ class Utils():
     def subtract(list_a: List, list_b: List) -> List:
         result = []
         if list_a and list_b:
-            checksum_list_b = [b.checksum for b in list_b]
-            result = [a for a in list_a if a.checksum not in checksum_list_b]
+            # Compare by version, not checksum: two migrations may have identical
+            # content, and an edited applied migration is caught by validate
+            versions_b = {b.version for b in list_b}
+            result = [a for a in list_a if a.version not in versions_b]
         elif list_a and not list_b:
             # List B is empty (usually from a new install)
             return list_a
@@ -38,8 +40,9 @@ class Utils():
 
     @staticmethod
     def is_file_name_valid(name: str) -> bool:
-        _pattern = r"%s\d+[._]\d+|\d+[._]\d+__%s\.%s$" % \
-            (settings.SQL_MIGRATION_PREFIX, settings.SQL_MIGRATION_SEPARATOR, settings.SQL_MIGRATION_SUFFIXES)
+        _pattern = r"%s\d+(?:[._]\d+){1,2}%s\w+%s$" % \
+            (re.escape(settings.SQL_MIGRATION_PREFIX), re.escape(settings.SQL_MIGRATION_SEPARATOR),
+             re.escape(settings.SQL_MIGRATION_SUFFIXES))
         return re.match(_pattern, name, re.IGNORECASE) is not None
 
     @staticmethod

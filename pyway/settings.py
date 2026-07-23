@@ -22,7 +22,7 @@ class Settings():
         config = ConfigFile()
         for arg in ARGS:
             if getattr(args, arg):
-                setattr(config, arg, getattr(args, arg))
+                config.set_explicit(arg, getattr(args, arg))
         return config
 
     @classmethod
@@ -71,7 +71,7 @@ class Settings():
                 if isinstance(cfg[c], str):
                     # Interpolate env vars
                     cfg[c] = os.path.expandvars(cfg[c])
-                setattr(config, c, cfg[c])
+                config.set_explicit(c, cfg[c])
 
             return config
         return ConfigFile()

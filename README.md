@@ -26,7 +26,7 @@ Or clone the repo:
 ## Configuration
 #### Pyway environment variables and command line options
 
-Priority is `env variables` -> `config file` -> `command args`
+Priority (lowest to highest) is `env variables` -> `config file` -> `command args`, i.e. command-line arguments override config file settings, which override environment variables.
 
 | Env Variable | Command Line | Description | Default |
 | --------------- | -------------- | -------------- | :--------------: |

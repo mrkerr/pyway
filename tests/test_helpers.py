@@ -38,6 +38,30 @@ def test_subtract_noresult() -> None:
 
 
 @pytest.mark.helpers_test
+def test_subtract_identical_content_different_versions() -> None:
+    # Two migrations with identical content (same checksum) are still
+    # distinct migrations - the unapplied one must remain pending
+    a = [Migration('01.01', 'SQL', 'V01_01__dup1.sql', 'ABCD1234', None),
+         Migration('01.02', 'SQL', 'V01_02__dup2.sql', 'ABCD1234', None)]
+    b = [Migration('01.01', 'SQL', 'V01_01__dup1.sql', 'ABCD1234', None)]
+    c = Utils.subtract(a, b)
+
+    assert len(c) == 1
+    assert c[0].name == 'V01_02__dup2.sql'
+
+
+@pytest.mark.helpers_test
+def test_subtract_applied_version_not_reapplied_on_checksum_change() -> None:
+    # An already-applied version with a modified local file must not be
+    # re-applied - validate reports the checksum mismatch instead
+    a = [Migration('01.01', 'SQL', 'V01_01__test1.sql', 'NEWSUM', None)]
+    b = [Migration('01.01', 'SQL', 'V01_01__test1.sql', 'OLDSUM', None)]
+    c = Utils.subtract(a, b)
+
+    assert c == []
+
+
+@pytest.mark.helpers_test
 def test_subtract_onlyonearray() -> None:
     a = [Migration.from_name('V01_01__test1.sql', os.path.join('tests', 'data', 'schema'))]
     b = []
@@ -94,3 +118,28 @@ def test_semantic_version_name_major_minor_period() -> None:
 @pytest.mark.helpers_test
 def test_semantic_version_name_minor_over_2digits() -> None:
     assert Utils.is_file_name_valid('V1_0_100__test1.sql')
+
+
+@pytest.mark.helpers_test
+def test_invalid_name_no_separator_or_suffix() -> None:
+    assert not Utils.is_file_name_valid('V1_1zzzzzz')
+
+
+@pytest.mark.helpers_test
+def test_invalid_name_missing_separator() -> None:
+    assert not Utils.is_file_name_valid('V01_01_no_separator.sql')
+
+
+@pytest.mark.helpers_test
+def test_invalid_name_wrong_suffix() -> None:
+    assert not Utils.is_file_name_valid('V01_01__init.txt')
+
+
+@pytest.mark.helpers_test
+def test_invalid_name_no_version() -> None:
+    assert not Utils.is_file_name_valid('test1.sql')
+
+
+@pytest.mark.helpers_test
+def test_invalid_name_missing_description() -> None:
+    assert not Utils.is_file_name_valid('V01_01__.sql')

@@ -133,6 +133,41 @@ def test_parse_arguments() -> None:
 
 
 @pytest.mark.settings_test
+def test_cli_args_not_clobbered_by_missing_config_file() -> None:
+    sys.argv = ['script_name', '--database-migration-dir', 'migrations', '--database-type', 'sqlite', 'info']
+
+    config = Settings.parse_arguments()
+    config_file = Settings.parse_config_file(os.path.join('tests', 'data', 'nonexistent.conf'))
+    config.merge(config_file)
+
+    assert config.database_migration_dir == 'migrations'
+    assert config.database_type == 'sqlite'
+
+
+@pytest.mark.settings_test
+def test_cli_args_override_config_file() -> None:
+    sys.argv = ['script_name', '--database-username', 'cliuser', 'info']
+
+    config = Settings.parse_arguments()
+    config_file = Settings.parse_config_file(os.path.join('tests', 'data', 'pyway.conf'))
+    config.merge(config_file)
+
+    assert config.database_username == 'cliuser'
+
+
+@pytest.mark.settings_test
+def test_config_file_fills_unset_values() -> None:
+    sys.argv = ['script_name', 'info']
+
+    config = Settings.parse_arguments()
+    config_file = Settings.parse_config_file(os.path.join('tests', 'data', 'pyway.conf'))
+    config.merge(config_file)
+
+    assert config.database_username == 'unittest'
+    assert config.database_migration_dir == 'schema'
+
+
+@pytest.mark.settings_test
 def test_env_var_interpolation() -> None:
     # Set an env var
     os.environ['TEST_VAR'] = 'sometest'

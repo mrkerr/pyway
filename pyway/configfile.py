@@ -1,5 +1,5 @@
 import os
-from typing import Any, Union
+from typing import Any, Set, Union
 
 
 class ConfigFile():
@@ -18,11 +18,20 @@ class ConfigFile():
         self.config = os.environ.get('PYWAY_CONFIG_FILE', '.pyway.conf')
         self.version = False
         self.cmd = None
+        # Keys set explicitly (CLI arg or config file) rather than env/default
+        self._explicit: Set[str] = set()
+
+    def set_explicit(self, key: str, value: Any) -> None:
+        setattr(self, key, value)
+        self._explicit.add(key)
 
     def merge(self, other: 'ConfigFile') -> None:
-        for key, value in vars(other).items():
-            if value is not None:
-                setattr(self, key, value)
+        # Only fill in values this config didn't explicitly set, so that
+        # priority is env/defaults < config file < command-line args
+        for key in getattr(other, '_explicit', set()):
+            value = getattr(other, key)
+            if key not in self._explicit and value is not None:
+                self.set_explicit(key, value)
 
 
 class MockConfig():
