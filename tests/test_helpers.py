@@ -121,6 +121,16 @@ def test_semantic_version_name_minor_over_2digits() -> None:
 
 
 @pytest.mark.helpers_test
+def test_python_migration_name() -> None:
+    assert Utils.is_file_name_valid('V1_1__data_transform.py')
+
+
+@pytest.mark.helpers_test
+def test_python_semantic_version_name() -> None:
+    assert Utils.is_file_name_valid('V1_0_1__data_transform.py')
+
+
+@pytest.mark.helpers_test
 def test_invalid_name_no_separator_or_suffix() -> None:
     assert not Utils.is_file_name_valid('V1_1zzzzzz')
 
