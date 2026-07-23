@@ -62,7 +62,7 @@ class Validate():
     def _diff_checksum(self, local_migration: Migration, db_migration: Migration) -> bool:
         return bool(local_migration.checksum == db_migration.checksum)
 
-    def _get_all_local_migrations(self) -> List:
+    def _get_all_local_migrations(self) -> List[Migration]:
         local_files = Utils.get_local_files(self.migration_dir)
         if not local_files:
             return []

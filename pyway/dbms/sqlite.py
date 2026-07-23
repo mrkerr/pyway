@@ -1,8 +1,9 @@
 import sqlite3
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, cast
 
 from pyway.migration import Migration
 from pyway.configfile import ConfigFile
+from pyway.errors import VERSION_NOT_FOUND
 
 
 CREATE_VERSION_MIGRATIONS = "create table if not exists %s ("\
@@ -27,18 +28,19 @@ class Sqlite():
         self.version_table = config.database_table
         self.create_version_table_if_not_exists()
 
-    def connect(self) -> Any:
-        conn = sqlite3.connect(self.config.database_name)
+    def connect(self) -> sqlite3.Connection:
+        # database_name is validated as required before any backend is created
+        conn = sqlite3.connect(cast(str, self.config.database_name))
         return conn
 
     def create_version_table_if_not_exists(self) -> None:
         self.execute(CREATE_VERSION_MIGRATIONS % self.version_table)
 
-    def execute(self, script: str) -> List[Tuple]:
+    def execute(self, script: str) -> List[Tuple[Any, ...]]:
         cnx = self.connect()
         cursor = cnx.cursor()
         cursor.executescript(script)
-        rows = cursor.fetchall()
+        rows: List[Tuple[Any, ...]] = cursor.fetchall()
         cnx.commit()
         cnx.close()
         return rows
@@ -57,13 +59,13 @@ class Sqlite():
     def get_schema_migration(self, version: str) -> Migration:
         cnx = self.connect()
         cursor = cnx.cursor()
-        cursor.execute(f"SELECT {','.join(SELECT_FIELDS)} FROM {self.version_table} WHERE version='{version}'")
+        cursor.execute(f"SELECT {','.join(SELECT_FIELDS)} FROM {self.version_table} WHERE version=?", [version])
         row = cursor.fetchone()
-        if row is not None:
-            migration = Migration(row[0], row[1], row[2], row[3], row[4])
         cursor.close()
         cnx.close()
-        return migration
+        if row is None:
+            raise ValueError(VERSION_NOT_FOUND % version)
+        return Migration(row[0], row[1], row[2], row[3], row[4])
 
     def upgrade_version(self, migration: Migration) -> None:
         self.execute(INSERT_VERSION_MIGRATE % (self.version_table, migration.version,

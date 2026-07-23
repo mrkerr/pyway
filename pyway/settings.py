@@ -2,10 +2,9 @@ import os
 import sys
 import argparse
 import yaml
-from typing import Dict, Union
+from typing import Any, Dict
 
 from pyway.configfile import ConfigFile
-from pyway.configfile import MockArgs
 
 # Pyway consts
 SQL_MIGRATION_PREFIX = os.environ.get('PYWAY_SQL_MIGRATION_PREFIX', 'V')
@@ -18,11 +17,11 @@ ARGS = ['database_migration_dir', 'database_table', 'database_type', 'database_h
 
 class Settings():
     @staticmethod
-    def parse_args(args: Union[argparse.Namespace, MockArgs]) -> ConfigFile:
+    def parse_args(args: argparse.Namespace) -> ConfigFile:
         config = ConfigFile()
         for arg in ARGS:
             if getattr(args, arg):
-                setattr(config, arg, getattr(args, arg))
+                config.set_explicit(arg, getattr(args, arg))
         return config
 
     @classmethod
@@ -48,7 +47,7 @@ class Settings():
 
         # We already display the version so exit
         if config.version:
-            sys.exit(1)
+            sys.exit(0)
 
         # If no arg is specified, show help
         if not config.cmd:
@@ -62,7 +61,7 @@ class Settings():
         # See if there is a config file
         if os.path.exists(config_file):
             with open(config_file, "r", encoding='utf-8') as ymlfile:
-                cfg: Dict = yaml.load(ymlfile, Loader=yaml.FullLoader)
+                cfg: Dict[str, Any] = yaml.load(ymlfile, Loader=yaml.FullLoader)
 
             # Expand config
             config = ConfigFile()
@@ -71,7 +70,7 @@ class Settings():
                 if isinstance(cfg[c], str):
                     # Interpolate env vars
                     cfg[c] = os.path.expandvars(cfg[c])
-                setattr(config, c, cfg[c])
+                config.set_explicit(c, cfg[c])
 
             return config
         return ConfigFile()

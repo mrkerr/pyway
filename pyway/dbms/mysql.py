@@ -1,12 +1,13 @@
 import mysql.connector
+from mysql.connector.abstracts import MySQLConnectionAbstract
 from mysql.connector.connection import MySQLConnection
-from mysql.connector.connection import MySQLConnectionAbstract
 from mysql.connector.connection_cext import CMySQLConnection
 from mysql.connector.pooling import PooledMySQLConnection
-from typing import List, Union
+from typing import Any, List, Tuple, Union, cast
 
 from pyway.migration import Migration
 from pyway.configfile import ConfigFile
+from pyway.errors import VERSION_NOT_FOUND
 
 
 CREATE_VERSION_MIGRATIONS = "create table if not exists %s ("\
@@ -63,7 +64,7 @@ class Mysql():
         cursor = cnx.cursor()
         cursor.execute(f"SELECT {','.join(SELECT_FIELDS)} FROM {self.version_table} ORDER BY {ORDER_BY_FIELD_ASC}")
         migrations = []
-        for row in cursor.fetchall():
+        for row in cast(List[Tuple[Any, ...]], cursor.fetchall()):
             migrations.append(Migration(row[0], row[1], row[2], row[3], row[4]))
         cursor.close()
         cnx.close()
@@ -73,12 +74,12 @@ class Mysql():
         cnx = self.connect()
         cursor = cnx.cursor(buffered=True)
         cursor.execute(f"SELECT {','.join(SELECT_FIELDS)} FROM {self.version_table} WHERE version=%s", [version])
-        row = cursor.fetchone()
-        if row is not None:
-            migration = Migration(row[0], row[1], row[2], row[3], row[4])
+        row = cast(Union[Tuple[Any, ...], None], cursor.fetchone())
         cursor.close()
         cnx.close()
-        return migration
+        if row is None:
+            raise ValueError(VERSION_NOT_FOUND % version)
+        return Migration(row[0], row[1], row[2], row[3], row[4])
 
     def upgrade_version(self, migration: Migration) -> None:
         self.execute(INSERT_VERSION_MIGRATE % (self.version_table, migration.version,

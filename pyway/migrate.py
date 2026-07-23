@@ -2,6 +2,7 @@ import os
 from typing import List
 
 from pyway.helpers import Utils
+from pyway.log import logger
 from pyway.migration import Migration
 from pyway.dbms.database import factory
 from pyway.errors import MIGRATIONS_NOT_FOUND
@@ -32,10 +33,13 @@ class Migrate():
                 self._db.upgrade_version(migration)
                 output += Utils.color(f"{migration.name} SUCCESS\n", bcolors.OKBLUE)
             except Exception as error:
-                raise RuntimeError(error)
+                # Report the migrations that already succeeded before failing
+                if output:
+                    logger.info(output)
+                raise RuntimeError(f"{migration.name} FAILED: {error}") from error
         return output
 
-    def _get_migration_files_to_be_executed(self) -> List:
+    def _get_migration_files_to_be_executed(self) -> List[Migration]:
         all_local_migrations = self._get_all_local_migrations()
         all_db_migrations = Migration.from_list(self._db.get_all_schema_migrations())
 
@@ -43,7 +47,7 @@ class Migrate():
             raise RuntimeError(MIGRATIONS_NOT_FOUND % self.migration_dir)
         return Utils.subtract(all_local_migrations, all_db_migrations)
 
-    def _get_all_local_migrations(self) -> List:
+    def _get_all_local_migrations(self) -> List[Migration]:
         local_files = Utils.get_local_files(self.migration_dir)
         if not local_files:
             return []

@@ -1,10 +1,13 @@
 import os
 import re
 import zlib
-from typing import Any, Dict, List, Iterable
+from typing import Any, Dict, List, Iterable, TYPE_CHECKING
 
 from pyway import settings
 from pyway.errors import VALID_NAME_ERROR, DIRECTORY_NOT_FOUND, OUT_OF_DATE_ERROR
+
+if TYPE_CHECKING:
+    from pyway.migration import Migration
 
 
 class bcolors():
@@ -21,11 +24,13 @@ class bcolors():
 class Utils():
 
     @staticmethod
-    def subtract(list_a: List, list_b: List) -> List:
+    def subtract(list_a: List['Migration'], list_b: List['Migration']) -> List['Migration']:
         result = []
         if list_a and list_b:
-            checksum_list_b = [b.checksum for b in list_b]
-            result = [a for a in list_a if a.checksum not in checksum_list_b]
+            # Compare by version, not checksum: two migrations may have identical
+            # content, and an edited applied migration is caught by validate
+            versions_b = {b.version for b in list_b}
+            result = [a for a in list_a if a.version not in versions_b]
         elif list_a and not list_b:
             # List B is empty (usually from a new install)
             return list_a
@@ -38,8 +43,9 @@ class Utils():
 
     @staticmethod
     def is_file_name_valid(name: str) -> bool:
-        _pattern = r"%s\d+[._]\d+|\d+[._]\d+__%s\.%s$" % \
-            (settings.SQL_MIGRATION_PREFIX, settings.SQL_MIGRATION_SEPARATOR, settings.SQL_MIGRATION_SUFFIXES)
+        _pattern = r"%s\d+(?:[._]\d+){1,2}%s\w+%s$" % \
+            (re.escape(settings.SQL_MIGRATION_PREFIX), re.escape(settings.SQL_MIGRATION_SEPARATOR),
+             re.escape(settings.SQL_MIGRATION_SUFFIXES))
         return re.match(_pattern, name, re.IGNORECASE) is not None
 
     @staticmethod
@@ -48,7 +54,7 @@ class Utils():
                                                 [x.version, x.name], reverse=False)
 
     @staticmethod
-    def flatten_migrations(migrations: Iterable[Any]) -> List[Dict[Any, Any]]:
+    def flatten_migrations(migrations: Iterable['Migration']) -> List[Dict[str, Any]]:
         migration_list = []
         for migration in migrations:
             migration_list.append({'version': Utils.format_version(migration.version), 'extension': migration.extension,
@@ -83,7 +89,7 @@ class Utils():
                 prev = zlib.crc32(line, prev)
             return "%X" % (prev & 0xFFFFFFFF)
         except FileNotFoundError:
-            raise FileNotFoundError(OUT_OF_DATE_ERROR % fullname.split("/")[-1])
+            raise FileNotFoundError(OUT_OF_DATE_ERROR % os.path.basename(fullname))
 
     @staticmethod
     def basepath(d: str) -> str:

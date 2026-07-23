@@ -3,7 +3,7 @@ from tabulate import tabulate
 from typing import List
 
 from pyway.helpers import Utils
-from pyway.log import bcolors
+from pyway.helpers import bcolors
 from pyway.migration import Migration
 from pyway.dbms.database import factory
 from pyway.configfile import ConfigFile
@@ -27,9 +27,9 @@ class Info():
             return tabulate(tbls, headers="keys",
                             tablefmt=self.tablefmt, floatfmt=".2f")
 
-    def get_table_info(self) -> List:
+    def get_table_info(self) -> List[Migration]:
         # Get remote migrations (and validate that the files exist)
-        db_migrations = self._db.get_all_schema_migrations()
+        db_migrations: List[Migration] = self._db.get_all_schema_migrations()
         for m in db_migrations:
             if not os.path.exists(os.path.join(self.config.database_migration_dir, m.name)):
                 raise RuntimeError(MIGRATIONS_MISSING % m.name)
@@ -39,7 +39,7 @@ class Info():
 
         return db_migrations + local_migrations
 
-    def get_new_local_migrations(self, db_migrations: List, migration_dir: str) -> List:
+    def get_new_local_migrations(self, db_migrations: List[Migration], migration_dir: str) -> List[Migration]:
         local_files = Utils.get_local_files(migration_dir)
         if not local_files:
             return []
