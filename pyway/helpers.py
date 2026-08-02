@@ -43,7 +43,7 @@ class Utils():
 
     @staticmethod
     def is_file_name_valid(name: str) -> bool:
-        _pattern = r"%s\d+(?:[._]\d+){1,2}%s\w+%s$" % \
+        _pattern = r"%s\d+(?:[._]\d+){1,2}%s\w+(?:%s|\.py)$" % \
             (re.escape(settings.SQL_MIGRATION_PREFIX), re.escape(settings.SQL_MIGRATION_SEPARATOR),
              re.escape(settings.SQL_MIGRATION_SUFFIXES))
         return re.match(_pattern, name, re.IGNORECASE) is not None
@@ -100,9 +100,9 @@ class Utils():
         path = Utils.basepath(d)
         dir_list = []
         try:
-            # Skip any hidden files
+            # Skip hidden files and anything that isn't a file (e.g. __pycache__)
             for f in os.listdir(path):
-                if not f.startswith('.'):
+                if not f.startswith('.') and os.path.isfile(os.path.join(path, f)):
                     dir_list.append(f)
         except OSError:
             raise FileNotFoundError(DIRECTORY_NOT_FOUND % path)

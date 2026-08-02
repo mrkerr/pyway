@@ -74,7 +74,12 @@ database_table: pyway
 
 
 ## Pyway Files
-Files are raw SQL files that are named like the following. Major/minor versioning and semantic versioning is supported.
+Pyway supports both SQL and Python migration files. Major/minor versioning and semantic versioning is supported.
+The description needs to match the word regexp [A-Za-z0-9_].
+It also supports 2 digits per version component, so 99.99.99 is the maximum version allowed.
+
+### SQL Migrations
+SQL migrations are raw SQL files named like the following:
 
 V{major}\_{minor}\_({patch})\_\_{description}.sql
 
@@ -82,8 +87,24 @@ Example: V01_01__initial_schema.sql
 
 Example: V01_01_01__initial_schema.sql
 
-The description needs to match the word regexp [A-Za-z0-9_].
-It also supports 2 digits per version component, so 99.99.99 is the maximum version allowed.
+### Python Migrations
+Python migrations are useful for data transformations that are awkward in plain SQL. They are named the
+same way with a `.py` suffix and must define a `migrate(connection)` function:
+
+V{major}\_{minor}\_({patch})\_\_{description}.py
+
+```python
+def migrate(connection):
+    cursor = connection.cursor()
+    cursor.execute("UPDATE users SET name = ?", (compute_name(),))
+```
+
+`connection` is a DBAPI connection to the configured database (e.g. a `sqlite3` or `psycopg2` connection).
+Pyway commits the connection after `migrate()` returns and closes it afterwards. `async def migrate(connection)`
+is also supported and is run to completion automatically.
+
+Python migrations are checksummed, validated, and recorded in the schema history table exactly like SQL
+migrations, with `PY` as the extension.
 
 
 ## Usage
